@@ -60,6 +60,7 @@ LOCAL_SHARED_LIBRARIES += \
     libhidltransport \
     libsensor \
     android.hardware.biometrics.fingerprint@2.1 \
+	vendor.lineage.biometrics.fingerprint.inscreen@1.0 \
     android.hardware.gatekeeper@1.0
 endif
 

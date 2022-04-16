@@ -23,6 +23,7 @@
 
 // android stuff
 #include <android/hardware/biometrics/fingerprint/2.1/IBiometricsFingerprint.h>
+#include <vendor/lineage/biometrics/fingerprint/inscreen/1.0/IFingerprintInscreen.h>
 #include <android/hardware/gatekeeper/1.0/IGatekeeper.h>
 
 #include <utils/Log.h>
@@ -47,7 +48,10 @@ using android::hardware::hidl_string;
 
 using android::hidl::base::V1_0::IBase;
 
+using vendor::lineage::biometrics::fingerprint::inscreen::V1_0::IFingerprintInscreen;
+
 sp<IBiometricsFingerprint> fpHal = nullptr;
+sp<IFingerprintInscreen> fpiHal = nullptr;
 
 struct UHardwareBiometry_
 {
@@ -71,14 +75,14 @@ struct UHardwareBiometry_
 struct UHardwareBiometryCallback_
 {
     UHardwareBiometryCallback_(UHardwareBiometryParams* params);
-    
+
     UHardwareBiometryEnrollResult enrollresult_cb;
     UHardwareBiometryAcquired acquired_cb;
     UHardwareBiometryAuthenticated authenticated_cb;
     UHardwareBiometryError error_cb;
     UHardwareBiometryRemoved removed_cb;
     UHardwareBiometryEnumerate enumerate_cb;
-    
+
     void* context;
 };
 
@@ -102,7 +106,7 @@ struct BiometricsFingerprintClientCallback : public IBiometricsFingerprintClient
     Return<void> onEnumerate(uint64_t deviceId, uint32_t fingerId,
                              uint32_t groupId, uint32_t remaining) override;
 };
-    
+
 UHardwareBiometryFingerprintAcquiredInfo HIDLToUFingerprintAcquiredInfo(FingerprintAcquiredInfo info) {
     switch(info) {
         case FingerprintAcquiredInfo::ACQUIRED_GOOD: return ACQUIRED_GOOD;
@@ -116,7 +120,7 @@ UHardwareBiometryFingerprintAcquiredInfo HIDLToUFingerprintAcquiredInfo(Fingerpr
             return ACQUIRED_GOOD;
     }
 }
-    
+
 UHardwareBiometryFingerprintError HIDLToUFingerprintError(FingerprintError error) {
     switch(error) {
         case FingerprintError::ERROR_NO_ERROR: return ERROR_NO_ERROR;
@@ -239,6 +243,11 @@ bool UHardwareBiometry_::init()
         return false;
     }
 
+    fpiHal = IFingerprintInscreen::getService();
+    if (fpiHal == nullptr) {
+        ALOGW("Unable to get FPI service\n");
+    }
+
     return true;
 }
 
@@ -261,6 +270,10 @@ uint64_t UHardwareBiometry_::preEnroll()
     }
 
     return fpHal->preEnroll();
+
+    if (fpiHal) {
+        fpiHal->onStartEnroll();
+    }
 }
 
 UHardwareBiometryRequestStatus UHardwareBiometry_::enroll(uint32_t gid, uint32_t timeoutSec, uint32_t user_id)
@@ -269,6 +282,11 @@ UHardwareBiometryRequestStatus UHardwareBiometry_::enroll(uint32_t gid, uint32_t
         ALOGE("Unable to get FP service\n");
         return SYS_UNKNOWN;
     }
+
+    if (fpiHal) {
+        fpiHal->onShowFODView();
+    }
+
     uint8_t *auth_token;
     uint32_t auth_token_len;
     int ret = 0;
@@ -337,7 +355,11 @@ UHardwareBiometryRequestStatus UHardwareBiometry_::postEnroll()
         ALOGE("Unable to get FP service\n");
         return SYS_UNKNOWN;
     }
-    
+
+    if (fpiHal) {
+        fpiHal->onFinishEnroll();
+    }
+
     return HIDLToURequestStatus(fpHal->postEnroll());
 }
 
@@ -347,7 +369,7 @@ uint64_t UHardwareBiometry_::getAuthenticatorId()
         ALOGE("Unable to get FP service\n");
         return 0;
     }
-    
+
     return fpHal->getAuthenticatorId();
 }
 
@@ -357,7 +379,7 @@ UHardwareBiometryRequestStatus UHardwareBiometry_::cancel()
         ALOGE("Unable to get FP service\n");
         return SYS_UNKNOWN;
     }
-    
+
     return HIDLToURequestStatus(fpHal->cancel());
 }
 
@@ -367,7 +389,7 @@ UHardwareBiometryRequestStatus UHardwareBiometry_::enumerate()
         ALOGE("Unable to get FP service\n");
         return SYS_UNKNOWN;
     }
-    
+
     return HIDLToURequestStatus(fpHal->enumerate());
 }
 
@@ -377,7 +399,7 @@ UHardwareBiometryRequestStatus UHardwareBiometry_::remove(uint32_t gid, uint32_t
         ALOGE("Unable to get FP service\n");
         return SYS_UNKNOWN;
     }
-    
+
     return HIDLToURequestStatus(fpHal->remove(gid, fid));
 }
 
@@ -387,7 +409,7 @@ UHardwareBiometryRequestStatus UHardwareBiometry_::setActiveGroup(uint32_t gid, 
         ALOGE("Unable to get FP service\n");
         return SYS_UNKNOWN;
     }
-    
+
     return HIDLToURequestStatus(fpHal->setActiveGroup(gid, storePath));
 }
 
@@ -397,7 +419,11 @@ UHardwareBiometryRequestStatus UHardwareBiometry_::authenticate(uint64_t operati
         ALOGE("Unable to get FP service\n");
         return SYS_UNKNOWN;
     }
-    
+
+    if (fpiHal) {
+        fpiHal->onShowFODView();
+    }
+
     return HIDLToURequestStatus(fpHal->authenticate(operationId, gid));
 }
 
