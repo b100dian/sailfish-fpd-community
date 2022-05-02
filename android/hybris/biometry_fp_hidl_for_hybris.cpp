@@ -152,14 +152,14 @@ Return<void> BiometricsFingerprintClientCallback::onEnrollResult(uint64_t device
 Return<void> BiometricsFingerprintClientCallback::onAcquired(uint64_t deviceId, FingerprintAcquiredInfo acquiredInfo,
     int32_t vendorCode)
 {
-    if (fpiHal && acquiredInfo == ACQUIRED_VENDOR) {
+    if (fpiHal && acquiredInfo == FingerprintAcquiredInfo::ACQUIRED_VENDOR) {
         switch(vendorCode) {
             case 1022:
-                ALOGW("1022 interpreted as onPress");
+                ALOGE("1022 interpreted as onPress");
                 fpiHal->onPress();
                 return Void();
             case 1023:
-                ALOGW("1023 interpreted as onRelease");
+                ALOGE("1023 interpreted as onRelease");
                 fpiHal->onRelease();
                 return Void();
         }

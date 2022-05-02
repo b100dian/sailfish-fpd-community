@@ -11,7 +11,7 @@ Conflicts=shutdown.target
 [Service]
 Type=dbus
 BusName=org.sailfishos.fingerprint1
-ExecStartPre=/bin/sh -c '/usr/bin/test -f /run/systemd/boot-status/init-done || sleep 5 || :'
+#ExecStartPre=/bin/sh -c '/usr/bin/test -f /run/systemd/boot-status/init-done || sleep 5 || :'
 ExecStart=/usr/bin/sailfish-fpd-community
 Restart=always
 CapabilityBoundingSet=CAP_BLOCK_SUSPEND CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_IPC_LOCK
