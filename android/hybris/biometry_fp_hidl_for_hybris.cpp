@@ -15,6 +15,9 @@
  *
  * Authored by: Erfan Abdi <erfangplus@gmail.com>
  */
+
+#define LOG_TAG "BIOMETRY_FP_HIDL_FOR_HYBRIS"
+#define LOG_NDEBUG 0
 #include <biometry.h>
 
 #include <pthread.h>
@@ -149,6 +152,19 @@ Return<void> BiometricsFingerprintClientCallback::onEnrollResult(uint64_t device
 Return<void> BiometricsFingerprintClientCallback::onAcquired(uint64_t deviceId, FingerprintAcquiredInfo acquiredInfo,
     int32_t vendorCode)
 {
+    if (fpiHal && acquiredInfo == ACQUIRED_VENDOR) {
+        switch(vendorCode) {
+            case 1022:
+                ALOGW("1022 interpreted as onPress");
+                fpiHal->onPress();
+                return Void();
+            case 1023:
+                ALOGW("1023 interpreted as onRelease");
+                fpiHal->onRelease();
+                return Void();
+        }
+    }
+
     if (hybris_fp_instance_cb && hybris_fp_instance_cb->acquired_cb) {
         hybris_fp_instance_cb->acquired_cb(deviceId, HIDLToUFingerprintAcquiredInfo(acquiredInfo), vendorCode, hybris_fp_instance_cb->context);
     }
@@ -245,7 +261,7 @@ bool UHardwareBiometry_::init()
 
     fpiHal = IFingerprintInscreen::getService();
     if (fpiHal == nullptr) {
-        ALOGW("Unable to get FPI service\n");
+        ALOGE("Unable to get FPI service\n");
     }
 
     return true;
