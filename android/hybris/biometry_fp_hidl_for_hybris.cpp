@@ -16,7 +16,7 @@
  * Authored by: Erfan Abdi <erfangplus@gmail.com>
  */
 
-#define LOG_TAG "BIOMETRY_FP_HIDL_FOR_HYBRIS"
+#define LOG_TAG "BIOMETRY_HYBRIS"
 #define LOG_NDEBUG 0
 #include <biometry.h>
 
@@ -154,10 +154,12 @@ Return<void> BiometricsFingerprintClientCallback::onAcquired(uint64_t deviceId, 
 {
     if (fpiHal && acquiredInfo == FingerprintAcquiredInfo::ACQUIRED_VENDOR) {
         switch(vendorCode) {
+            case 22:
             case 1022:
                 ALOGE("1022 interpreted as onPress");
                 fpiHal->onPress();
                 return Void();
+            case 23:
             case 1023:
                 ALOGE("1023 interpreted as onRelease");
                 fpiHal->onRelease();
@@ -173,6 +175,9 @@ Return<void> BiometricsFingerprintClientCallback::onAcquired(uint64_t deviceId, 
 
 Return<void> BiometricsFingerprintClientCallback::onAuthenticated(uint64_t deviceId, uint32_t fingerId, uint32_t groupId, const hidl_vec<uint8_t>& token)
 {
+    if (fpiHal) {
+        fpiHal->onRelease();
+    }
     if (hybris_fp_instance_cb && hybris_fp_instance_cb->authenticated_cb) {
         hybris_fp_instance_cb->authenticated_cb(deviceId, fingerId, groupId, hybris_fp_instance_cb->context);
     }
