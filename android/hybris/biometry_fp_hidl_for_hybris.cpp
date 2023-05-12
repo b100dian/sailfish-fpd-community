@@ -17,7 +17,7 @@
  */
 
 #define LOG_TAG "BIOMETRY_HYBRIS"
-#define LOG_NDEBUG 0
+#define LOG_NDEBUG 1
 #include <biometry.h>
 
 #include <pthread.h>
@@ -155,12 +155,14 @@ Return<void> BiometricsFingerprintClientCallback::onAcquired(uint64_t deviceId, 
     if (fpiHal && acquiredInfo == FingerprintAcquiredInfo::ACQUIRED_VENDOR) {
         switch(vendorCode) {
             case 22:
-            case 1022:
+            case 1022: // Xiaomi (tucana)
+            case 1010:
                 ALOGE("Interpreted as onPress");
                 fpiHal->onPress();
                 return Void();
             case 23:
-            case 1023:
+            case 1023: // Xiaomi (tucana)
+            case 1011:
                 ALOGE("Interpreted as onRelease");
                 fpiHal->onRelease();
                 return Void();
